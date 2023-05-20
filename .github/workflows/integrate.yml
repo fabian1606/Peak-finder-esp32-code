@@ -1,7 +1,7 @@
 name: Upload Compiled Code
 
 on:
-  release:
+  push:
     branches:
       - main  # Update with your branch name
 jobs:
