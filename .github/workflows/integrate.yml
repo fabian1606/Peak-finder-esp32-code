@@ -22,4 +22,4 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: compiled-code
-          path: path/to/your/compiled/code  # Update with the actual path
+          path: path/to/your/compiled/code2  # Update with the actual path
