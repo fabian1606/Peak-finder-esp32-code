@@ -5,10 +5,8 @@ name: CI
 # Controls when the action will run. Triggers the workflow on push or pull request
 # events but only for the master branch
 on:
-  push:
-    branches: main
-  pull_request:
-    branches: [ master, develop ]
+  tags:
+    - v*
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -32,4 +30,12 @@ jobs:
     - name: Install platformIO libraries
       run: pio lib install
     - name: Run PlatformIO
-      run: platformio run
+      run: platformio run --target upload
+      env:
+        PLATFORMIO_BUILD_DIR: .pio/build/esp32dev
+    - name: Upload firmware binary
+      uses: actions/upload-artifact@v2
+      with:
+        name: firmware
+        path: ${{ env.PLATFORMIO_BUILD_DIR }}/firmware.bin
+
