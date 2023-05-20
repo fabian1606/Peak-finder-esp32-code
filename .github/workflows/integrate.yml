@@ -35,7 +35,7 @@ jobs:
       env:
         PLATFORMIO_BUILD_DIR: .pio/build/esp32dev
     - name: Upload firmware binary
-        uses: actions/upload-release-asset@v1
+        uses: actions/upload-release-asset@v2
         with:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: ${{ env.PLATFORMIO_BUILD_DIR }}/firmware.bin
