@@ -4,6 +4,7 @@ on:
   release:
     branches:
       - main  # Update with your branch name
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -17,6 +18,9 @@ jobs:
 
       - name: Compile code
         run: pio run
+
+      - name: Print workspace directory
+        run: echo "Workspace directory: ${{ github.workspace }}"
 
       - name: Upload compiled code
         uses: actions/upload-artifact@v2
