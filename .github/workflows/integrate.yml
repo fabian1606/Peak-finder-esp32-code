@@ -2,12 +2,11 @@
 
 name: CI
 
-# Controls when the action will run. Triggers the workflow on push or pull request
-# events but only for the master branch
+# action is triggered when a new release is created (i.e. a tag is pushed)
 on:
   push:
     tags:
-      - v*
+      - v* # Push events to matching v*, i.e. v1.0, v20.15.10
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -34,12 +33,22 @@ jobs:
       run: platformio run 
       env:
         PLATFORMIO_BUILD_DIR: .pio/build/esp32dev
+    # Create a new release
+    - name: Create release
+      id: create_release
+      uses: actions/create-release@v1
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+    # Upload the firmware binary as a release asset
     - name: Upload firmware binary
       id: upload-firmware
       uses: actions/upload-release-asset@v1
       with:
-        upload_url: ${{ github.event.release.upload_url }}
-        asset_path: ${{ env.PLATFORMIO_BUILD_DIR }}/firmware.bin
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ${{ env.PLATFORMIO_BUILD_DIR }}/firmware.bin # The firmware binary is located in the build directory
         asset_name: firmware.bin
         asset_content_type: application/octet-stream
 
