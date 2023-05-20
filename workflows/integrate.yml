@@ -1,0 +1,28 @@
+name: Upload Compiled Code
+
+on:
+  release:
+    branches:
+      - main  # Update with your branch name
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up PlatformIO
+        uses: platformio/platformio-action@v3
+
+      - name: Compile code
+        run: pio run
+
+      - name: Print workspace directory
+        run: echo "Workspace directory: ${{ github.workspace }}" #This is the directory where the code is compiled
+
+      - name: Upload compiled code
+        uses: actions/upload-artifact@v2
+        with:
+          name: compiled-code
+          path: path/to/your/compiled/code  # Update with the actual path
