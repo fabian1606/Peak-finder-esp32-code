@@ -34,20 +34,23 @@ jobs:
       env:
         PLATFORMIO_BUILD_DIR: .pio/build/esp32dev
     # Create a new release
-    - name: Create release
+    - name: Create Release
       id: create_release
       uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: ${{ github.ref }}
         release_name: Release ${{ github.ref }}
         draft: false
         prerelease: false
-    # Upload the firmware binary as a release asset
-    - name: Upload firmware binary
-      id: upload-firmware
+    - name: Upload Release Asset
+      id: upload-release-asset 
       uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
         asset_path: ${{ env.PLATFORMIO_BUILD_DIR }}/firmware.bin # The firmware binary is located in the build directory
         asset_name: firmware.bin
         asset_content_type: application/octet-stream
