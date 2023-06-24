@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <esp_wifi.h>
+#include <DNSServer.h>
 #include <vector>
 #include <functional>
 #include <iostream>
@@ -12,6 +13,9 @@
 
 class WifiSniffer{
     private:  
+        DNSServer dnsServer;
+        const byte DNS_PORT = 53;
+
         WifiSniffer();
         WifiSniffer(uint8_t minChannel, uint8_t maxChannel);
         ~WifiSniffer();
