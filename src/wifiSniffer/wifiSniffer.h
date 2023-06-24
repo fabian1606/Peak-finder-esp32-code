@@ -4,8 +4,11 @@
 #include <vector>
 #include <functional>
 #include <iostream>
+#include <cstring>
+
 
 // inspiration from: https://github.com/DiJei/esp32-wifi-sniffer/tree/main
+
 
 class WifiSniffer{
     private:  
@@ -36,6 +39,8 @@ class WifiSniffer{
 
         static void wifiSnifferPacketHandler (void* buff, wifi_promiscuous_pkt_type_t type); //set as static because it is called from a c function
 
+        uint16_t macIdCounter;
+
     public:
         static WifiSniffer& getInstance() { // singleton pattern to ensure that only one instance of the class exists (i cant use the wifi instance in multiple objects)
             static WifiSniffer instance;
@@ -43,11 +48,16 @@ class WifiSniffer{
         }
 
         typedef struct { // the format the mac adress is saved in
+            uint16_t id;
             uint32_t timestamp;
-            const char macAdress [35];
+            char macAdress [35];
+            uint16_t numMessages;
         }macAdress;
 
         std::vector<macAdress>macAdresses; // vector to save the mac adresses
-        void init();
+        void init(const char* ssid);
         void setChannel(uint8_t & channel);
+
+        void addMacAdress(const char * macAdress); // add a mac adress to the list
+        void removeMacAdress(macAdress macAdress); // remove a mac adress from the list
 };
