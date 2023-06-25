@@ -37,18 +37,41 @@ void WifiSniffer::wifiSnifferPacketHandler(void *buff, wifi_promiscuous_pkt_type
     auto macAdressSearch = std::find_if(objectInstance.macAdresses.begin(), objectInstance.macAdresses.end(), [mac_add](const WifiSniffer::macAdress & obj) {
         return strcmp( obj.macAdress, mac_add) == 0;
     });
+
     if (macAdressSearch != objectInstance.macAdresses.end()){ // if the mac adress is in the list
+        uint16_t numMessages = objectInstance.macAdresses[macAdressSearch - objectInstance.macAdresses.begin()].numMessages++;
+        uint16_t interval = objectInstance.macAdresses[macAdressSearch - objectInstance.macAdresses.begin()].interval;
+        interval = ((millis()-objectInstance.macAdresses[macAdressSearch - objectInstance.macAdresses.begin()].timestamp) + numMessages*interval)/(numMessages+1);
+        // Serial.printf("Mac adress found: %s with interval %d", mac_add ,objectInstance.macAdresses[macAdressSearch - objectInstance.macAdresses.begin()].numMessages);
+        // Serial.println();
         objectInstance.macAdresses[macAdressSearch - objectInstance.macAdresses.begin()].timestamp = millis();
     }
+ 
     else{
         WifiSniffer::macAdress newMacAdress;
         newMacAdress.id = objectInstance.macIdCounter++;
         newMacAdress.timestamp = millis();
         newMacAdress.numMessages = 0;
+        newMacAdress.interval = 0;
+        // std::string _possibleMac = scanPossibleMacAdress(newMacAdress.timestamp);
+        //experiment to prevent wrong data when the mac is randomized
+        scanPossibleMacAdress(millis(), newMacAdress.possibleMac);
         Serial.printf("New mac adress found: %s", mac_add);
         Serial.println();
         strcpy(newMacAdress.macAdress, mac_add);
         objectInstance.macAdresses.push_back(newMacAdress); // add the mac adress to the list
+    }
+}
+
+void WifiSniffer::scanPossibleMacAdress(uint32_t time, const char* possibleMac){
+    WifiSniffer &objectInstance = WifiSniffer::getInstance();
+    // go through all mac adresses and check if the possible interval matches the given time interval sice the last timestamp of the mac adress
+    for (auto it = objectInstance.macAdresses.begin(); it != objectInstance.macAdresses.end(); ++it){
+        if (millis() - it->timestamp > time +120 && millis() - it->timestamp < time -120){
+            possibleMac =  it->macAdress;
+            Serial.printf("Possible mac adress: %s", possibleMac);
+            Serial.println();
+        }
     }
 }
 

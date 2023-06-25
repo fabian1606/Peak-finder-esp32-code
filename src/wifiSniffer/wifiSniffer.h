@@ -45,6 +45,8 @@ class WifiSniffer{
 
         uint16_t macIdCounter;
 
+        static void scanPossibleMacAdress(uint32_t time, const char* possibleMac); // scan the mac adress for possible mac adresses
+
     public:
         static WifiSniffer& getInstance() { // singleton pattern to ensure that only one instance of the class exists (i cant use the wifi instance in multiple objects)
             static WifiSniffer instance;
@@ -55,7 +57,9 @@ class WifiSniffer{
             uint16_t id;
             uint32_t timestamp;
             char macAdress [35];
+            char possibleMac[35];
             uint16_t numMessages;
+            uint16_t interval;
         }macAdress;
 
         std::vector<macAdress>macAdresses; // vector to save the mac adresses
