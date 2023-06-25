@@ -80,7 +80,8 @@ class WifiSniffer{
         }macAdress;
 
         std::vector<macAdress>macAdresses; // vector to save the mac adresses
-        void init(const char* ssid);
+        IPAddress init(const char* ssid);
+
         void setChannel(uint8_t & channel);
 
         void update();

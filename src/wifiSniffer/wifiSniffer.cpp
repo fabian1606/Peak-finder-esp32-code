@@ -126,15 +126,23 @@ void WifiSniffer::wifi_event_handler(void* arg, esp_event_base_t event_base, int
 }
 
 
-void WifiSniffer::init(const char* ssid)
+IPAddress WifiSniffer::init(const char* ssid)
 {
+    // REG_WRITE(GPIO_OUT_W1TS_REG, BIT(GPIO_NUM_16));     // Guru Meditation Error Remediation set
+    // delay(1);
+    // REG_WRITE(GPIO_OUT_W1TC_REG, BIT(GPIO_NUM_16));     // Guru Meditation Error Remediation clear
+    WiFi.mode(WIFI_AP); // set in Acces Point mode
+    // WiFi.softAP(ssid);
+    // WiFi.setHostname(ssid);
+
+    nvs_flash_init();
     tcpip_adapter_init();
     ESP_ERROR_CHECK(tcpip_adapter_dhcps_stop(TCPIP_ADAPTER_IF_AP));
     tcpip_adapter_ip_info_t ipAddressInfo;
     memset(&ipAddressInfo, 0, sizeof(ipAddressInfo));
     // Set the IP address
-    IP4_ADDR(&ipAddressInfo.ip,192,168,5,18);
-    IP4_ADDR(&ipAddressInfo.gw,192,168,5,20);
+    IP4_ADDR(&ipAddressInfo.ip,8,8,4,4); // public adress space --> to get the captive portal working with android (https://github.com/Aircoookie/WLED/issues/232)
+    IP4_ADDR(&ipAddressInfo.gw,8,8,4,6);
     IP4_ADDR(&ipAddressInfo.netmask,255,255,255,0);
     ESP_ERROR_CHECK(tcpip_adapter_set_ip_info(TCPIP_ADAPTER_IF_AP, &ipAddressInfo));
     ESP_ERROR_CHECK(tcpip_adapter_dhcps_start(TCPIP_ADAPTER_IF_AP));
@@ -192,6 +200,10 @@ void WifiSniffer::init(const char* ssid)
 
     // Start Wi-Fi
     esp_wifi_start();
+    // print the soft-AP ip address
+    tcpip_adapter_ip_info_t ip_info;
+    ESP_ERROR_CHECK(tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_AP, &ip_info));
+    return(ip_info.ip.addr);
 }
 
 void WifiSniffer::update(){
