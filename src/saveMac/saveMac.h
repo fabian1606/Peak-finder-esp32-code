@@ -4,15 +4,6 @@
 
 class SaveMac
 {
-private:
-
-
-    static void IRAM_ATTR timer_isr();
-
-    std::vector<clientsPerHour> Hours;
-    clientsPerHour* mac();
-    hw_timer_t * timer = NULL;
-    
 public:
     typedef struct { 
         std::vector<uint16_t> wifiMacs;
@@ -22,5 +13,10 @@ public:
     void init(clientsPerHour* newMac());
     SaveMac();
     ~SaveMac();
+private:
+    std::vector<clientsPerHour> Hours;
+    clientsPerHour* mac();
+    hw_timer_t * timer = NULL;
+    
 
 };

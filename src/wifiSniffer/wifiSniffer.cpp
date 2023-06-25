@@ -1,13 +1,35 @@
 #include "wifiSniffer.h"
 
-WifiSniffer::WifiSniffer()
-{
-    minWifiChannel = 1;
-    maxWifiChannel = 13;
-    macIdCounter = 0;
+WifiSniffer::WifiSniffer(){
+    WifiSniffer(1, 13);
 }
 
-int count = 0;
+
+WifiSniffer::WifiSniffer(uint8_t minChannel, uint8_t maxChannel){
+    minWifiChannel = minChannel;
+    maxWifiChannel = maxChannel;
+    macIdCounter = 0;
+
+    httpServerInstance = NULL;
+
+    testUri = {
+            .uri       = "/",
+            .method    = HTTP_GET,
+            .handler   = methodHandler,
+            .user_ctx  = NULL,
+    };
+}
+
+esp_err_t WifiSniffer:: methodHandler(httpd_req_t* httpRequest){
+    ESP_LOGI("HANDLER","This is the handler for the <%s> URI", httpRequest->uri);
+    return ESP_OK;
+}
+
+WifiSniffer::~WifiSniffer()
+{
+    // Destructor
+}
+
 
 void WifiSniffer::wifiSnifferPacketHandler(void *buff, wifi_promiscuous_pkt_type_t type){
     const wifi_promiscuous_pkt_t *ppkt = (wifi_promiscuous_pkt_t *)buff;
@@ -75,20 +97,49 @@ void WifiSniffer::scanPossibleMacAdress(uint32_t time, const char* possibleMac){
     }
 }
 
-WifiSniffer::WifiSniffer(uint8_t minChannel, uint8_t maxChannel)
-{
-    minWifiChannel = minChannel;
-    maxWifiChannel = maxChannel;
-}
 
-WifiSniffer::~WifiSniffer()
-{
-    // Destructor
+
+void WifiSniffer:: startHttpServer(void){
+    // WifiSniffer &objectInstance = WifiSniffer::getInstance();
+    // httpd_config_t httpServerConfiguration = HTTPD_DEFAULT_CONFIG();
+    // httpServerConfiguration.server_port = objectInstance.serverPort;
+    // if(httpd_start(&httpServerInstance, &httpServerConfiguration) == ESP_OK){
+    //     ESP_ERROR_CHECK(httpd_register_uri_handler(httpServerInstance, &objectInstance.testUri));
+    // }
+}
+     
+void WifiSniffer::stopHttpServer(void){
+    // if(httpServerInstance != NULL){
+    //     ESP_ERROR_CHECK(httpd_stop(httpServerInstance));
+    // }
+}
+//Handle 
+void WifiSniffer::wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data){
+     if (event_id == WIFI_EVENT_AP_STACONNECTED) {
+        wifi_event_ap_staconnected_t* event = (wifi_event_ap_staconnected_t*) event_data;
+        Serial.println("Client connected");
+    } 
+    else if (event_id == WIFI_EVENT_AP_STADISCONNECTED) {
+        wifi_event_ap_stadisconnected_t* event = (wifi_event_ap_stadisconnected_t*) event_data;
+        Serial.println("Client disconnected");
+    }
 }
 
 
 void WifiSniffer::init(const char* ssid)
 {
+    tcpip_adapter_init();
+    ESP_ERROR_CHECK(tcpip_adapter_dhcps_stop(TCPIP_ADAPTER_IF_AP));
+    tcpip_adapter_ip_info_t ipAddressInfo;
+    memset(&ipAddressInfo, 0, sizeof(ipAddressInfo));
+    // Set the IP address
+    IP4_ADDR(&ipAddressInfo.ip,192,168,5,18);
+    IP4_ADDR(&ipAddressInfo.gw,192,168,5,20);
+    IP4_ADDR(&ipAddressInfo.netmask,255,255,255,0);
+    ESP_ERROR_CHECK(tcpip_adapter_set_ip_info(TCPIP_ADAPTER_IF_AP, &ipAddressInfo));
+    ESP_ERROR_CHECK(tcpip_adapter_dhcps_start(TCPIP_ADAPTER_IF_AP));
+    // Set the wifi country to a country with a legal ISM band
+
     wifi_country_t wifi_country = {
         // To use powerlimits in Germany
         .cc = "DE",
@@ -97,7 +148,6 @@ void WifiSniffer::init(const char* ssid)
         .max_tx_power = 100,
     };
     // Init
-    tcpip_adapter_init();
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     esp_wifi_init(&cfg);
     esp_wifi_set_country(&wifi_country); /* set country for channel range [1, 13] */
@@ -105,16 +155,23 @@ void WifiSniffer::init(const char* ssid)
     Serial.println("Starting Access Point...");
     esp_wifi_set_mode(WIFI_MODE_AP);
 
+    //converting the ssid to a uint8_t array
+    uint8_t ssidArray[32];
+    memset(ssidArray, 0, sizeof(ssidArray));
+    memcpy(ssidArray, ssid, strlen(ssid));
+
+    //setting the access point config
     wifi_config_t ap_config;
     memset(&ap_config, 0, sizeof(ap_config));
-    strcpy((char*)ap_config.ap.ssid, ssid); // Replace "YourSSID" with your desired SSID
-    ap_config.ap.ssid_len = strlen(ssid);
-    ap_config.ap.channel = 1; // Set the Wi-Fi channel to use
-    ap_config.ap.authmode = WIFI_AUTH_OPEN; // Set the authentication mode
+    memcpy(ap_config.ap.ssid, ssidArray, sizeof(ap_config.ap.ssid));
+    ap_config.ap.channel = 0;
+    ap_config.ap.authmode = WIFI_AUTH_OPEN;
+    ap_config.ap.ssid_hidden = 0;
+    ap_config.ap.max_connection = 1;
+    ap_config.ap.beacon_interval = 100;
 
+    //start the acces point
     esp_wifi_set_config(WIFI_IF_AP, &ap_config);
-
-    esp_wifi_start();
 
     // setting scan filter to only receive management packets --> better package filtering --> less packages --> less cpu usage
 
@@ -126,6 +183,18 @@ void WifiSniffer::init(const char* ssid)
 
     esp_wifi_set_promiscuous(true); 
     esp_wifi_set_promiscuous_rx_cb(&wifiSnifferPacketHandler);
+
+    esp_event_loop_create_default();
+    esp_event_handler_instance_t instance_any_id;
+    esp_event_handler_instance_t instance_got_ip;
+    esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL, &instance_any_id);
+    esp_event_handler_instance_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler, NULL, &instance_got_ip);
+
+    // Start Wi-Fi
+    esp_wifi_start();
+}
+
+void WifiSniffer::update(){
 }
 
 void WifiSniffer::setChannel(uint8_t &channel)

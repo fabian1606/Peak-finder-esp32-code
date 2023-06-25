@@ -1,7 +1,12 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <esp_wifi.h>
+#include <esp_event.h>
+#include <esp_event_loop.h>
+#include "nvs_flash.h"
+#include "esp_http_server.h"
 #include <DNSServer.h>
+// #include <WebServer.h>
 #include <vector>
 #include <functional>
 #include <iostream>
@@ -9,6 +14,7 @@
 
 
 // inspiration from: https://github.com/DiJei/esp32-wifi-sniffer/tree/main
+// AP Wifi with working server https://esp32.com/viewtopic.php?t=9687
 
 
 class WifiSniffer{
@@ -42,10 +48,21 @@ class WifiSniffer{
         uint8_t maxWifiChannel;
 
         static void wifiSnifferPacketHandler (void* buff, wifi_promiscuous_pkt_type_t type); //set as static because it is called from a c function
+        static void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
 
         uint16_t macIdCounter;
 
         static void scanPossibleMacAdress(uint32_t time, const char* possibleMac); // scan the mac adress for possible mac adresses
+
+        //##### HTTP SERVER #####
+
+         httpd_handle_t httpServerInstance;
+        static esp_err_t methodHandler(httpd_req_t* httpRequest);
+         httpd_uri_t testUri;
+        const uint16_t serverPort = 80;
+
+        static void startHttpServer(void);
+        static void stopHttpServer(void);
 
     public:
         static WifiSniffer& getInstance() { // singleton pattern to ensure that only one instance of the class exists (i cant use the wifi instance in multiple objects)
@@ -66,6 +83,5 @@ class WifiSniffer{
         void init(const char* ssid);
         void setChannel(uint8_t & channel);
 
-        void addMacAdress(const char * macAdress); // add a mac adress to the list
-        void removeMacAdress(macAdress macAdress); // remove a mac adress from the list
+        void update();
 };
