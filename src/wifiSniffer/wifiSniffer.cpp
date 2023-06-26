@@ -175,7 +175,7 @@ IPAddress WifiSniffer::init(const char* ssid)
     ap_config.ap.channel = 0;
     ap_config.ap.authmode = WIFI_AUTH_OPEN;
     ap_config.ap.ssid_hidden = 0;
-    ap_config.ap.max_connection = 1;
+    ap_config.ap.max_connection = 10;
     ap_config.ap.beacon_interval = 100;
 
     //start the acces point
