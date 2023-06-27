@@ -64,11 +64,19 @@ class WifiSniffer{
         static void startHttpServer(void);
         static void stopHttpServer(void);
 
+        void* macCallback;
+
     public:
         static WifiSniffer& getInstance() { // singleton pattern to ensure that only one instance of the class exists (i cant use the wifi instance in multiple objects)
             static WifiSniffer instance;
             return instance;
         }
+
+        // define the callback function for the Time
+
+
+
+        void setMacCallback(void* callback);// callback function when a new mac is found
 
         typedef struct { // the format the mac adress is saved in
             uint16_t id;

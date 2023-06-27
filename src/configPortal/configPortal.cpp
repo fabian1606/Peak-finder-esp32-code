@@ -27,7 +27,7 @@ void ConfigPortal::startWifi(char* ssid){
         server.send(200, "text/html", configHtml);
     });
     server.on("/api/setConfig", [this](){
-        server.send(202,"text/html","confiigurtion succesfull: closing config portal...");
+        server.send(202,"text/html","configuration succesfull: closing config portal...");
         if(server.hasArg("mountain") && server.hasArg("uuid"))
             handleApi(server.arg("mountain"),server.arg("uuid"));
     });
