@@ -8,6 +8,9 @@
 bool bleConnected = false;
 
 NimBLECharacteristic *pCharacteristic;
+NimBLEServer *pServer;
+uint32_t lastMsgSend = 0;
+uint16_t indexX = 0;
 
 void gattSendChunk(uint16_t index, String message)
 {
@@ -36,16 +39,25 @@ void gattSendChunk(uint16_t index, String message)
 }
 void gattSendMessage(uint16_t index)
 {
-    String message = "Once upon a time in the quaint village of Willowbrook, there lived a young girl named Emily. Emily was known for her wild imagination and adventurous spirit. She spent most of her days exploring the nearby forest, seeking hidden treasures and uncovering the secrets of the enchanted land. One sunny afternoon, as Emily ventured deeper into the heart of the forest, she stumbled upon a hidden pathway. It was a narrow trail, covered in vibrant flowers and shimmering with a magical aura. Curiosity sparked within Emily, and she couldn't resist the urge to follow the trail and see where it led. As she walked further along the path, the surroundings began to transform. The trees grew taller and more majestic, their branches intertwining to form intricate archways. The air filled with the sweet scent of blooming flowers, and tiny fairies flitted through the sunlight. Emily's heart danced with joy as she marveled at the breathtaking beauty around her. But little did she know that this was only the beginning of her extraordinary journey. After walking for what felt like hours, Emily reached a clearing bathed in golden light. In the center stood a magnificent, ancient oak tree, its trunk covered in symbols and intricate carvings. At the base of the tree, a small key glistened, beckoning Emily to take hold of it. With a mix of excitement and trepidation, Emily grasped the key and turned it in the lock of the oak tree. As she did, the ground trembled, and the tree split open to reveal a hidden doorway. It was an entrance to a magical realm beyond her wildest dreams. Hesitant but filled with curiosity, Emily stepped through the doorway and found herself in a land filled with wonders. Talking animals greeted her, and mystical creatures of all shapes and sizes wandered the colorful landscapes. There were towering castles made of candy, rivers of rainbow-hued water, and floating islands adorned with vibrant flowers. Amidst the enchantment, Emily discovered a forgotten village inhabited by creatures known as the Whimsicals. They were tiny, mischievous beings with brightly colored hair and laughter that echoed through the air. The Whimsicals were known for their love of games and riddles, and they welcomed Emily with open arms. In the village square, Emily encountered their leader, a wise and whimsical gnome named Ollie. Ollie explained that the magical realm had been hidden away for centuries, waiting for a special visitor like Emily to bring joy and laughter back to their lives. Eager to help, Emily embraced her role as the bringer of joy. She organized grand feasts, entertaining performances, and exciting scavenger hunts that brought laughter and unity to the Whimsical village. The once quiet village was now filled with the sounds of merriment and jubilation. Months turned into years, and Emily became an integral part of the Whimsical community. She learned their songs, listened to their stories, and shared her own tales of the human world. Together, they discovered the true power of friendship, love, and imagination. One fateful day, as Emily prepared to leave the magical realm and return home, the Whimsicals gathered to bid her farewell. Tears filled their eyes as they thanked her for the happiness she had brought into their lives. Ollie handed Emily a small golden locket, a symbol of their eternal bond. With a heavy heart, Emily stepped back through the hidden doorway, leaving behind the world of whimsy and wonder. As she emerged back into the familiar forest, she couldn't help but smile, knowing that a piece of the magical realm would forever reside in her heart. From that day forward, Emily carried the lessons she learned from the Whimsicals—about the power of imagination, the importance of laughter, and the beauty of friendship. And whenever she felt the need for a touch of magic, she would simply open the golden locket, allowing the memories of her extraordinary journey to fill her soul and inspire her adventures in the human world.";
+    Preferences preferences;
+    preferences.begin("web", false);
+    String users = preferences.getString("users");
+    String clientsPerHour = preferences.getString("clientsHour");
+    preferences.end();
+
+    String message = users + String(static_cast<char>(0xFF)) + clientsPerHour;
     const char *charmessage = message.c_str();
     uint16_t messageLength = strlen(charmessage);
     // Serial.println("Sending: "+message+String(messageLength));
     uint8_t chunkSize = 18;
     if (index * chunkSize < messageLength)
     {
-        if((index+1)*chunkSize > messageLength)index = 256*256-1;
         gattSendChunk(index, message.substring(index * chunkSize, index * chunkSize + chunkSize));
     }
+    else if ((index)*chunkSize > messageLength && (index-1)*chunkSize < messageLength){
+        gattSendChunk(256*256-1,"");
+    }
+   
 }
 
 class ServerCallbacks : public NimBLEServerCallbacks
@@ -61,13 +73,15 @@ class ServerCallbacks : public NimBLEServerCallbacks
     {
         Serial.printf("Client disconnected");
         bleConnected = false;
+        indexX = 0;
+
     };
 };
 
 void gattInit(const char *serviceUuid, const char *characteristicUuid)
 {
     NimBLEDevice::init("ESP32_PeakFinder");
-    NimBLEServer *pServer = NimBLEDevice::createServer();
+    pServer = NimBLEDevice::createServer();
 
     // GattCallback *pServerCallbacks = new GattCallback();
     // pServerCallbacks->setCallback(new ServerCallbacks());
@@ -96,9 +110,6 @@ void gattInit(const char *serviceUuid, const char *characteristicUuid)
     pServer->getAdvertising()->start();
     Serial.println("Waiting for connections...");
 }
-
-uint32_t lastMsgSend = 0;
-uint16_t indexX = 0;
 
 void gattUpdate()
 {

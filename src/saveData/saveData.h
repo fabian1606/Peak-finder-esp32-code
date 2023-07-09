@@ -9,7 +9,6 @@ public:
     typedef struct { 
         uint16_t numClients;
         uint32_t timestamp;
-        int8_t temp;
     }mac;
 
 
@@ -17,12 +16,12 @@ public:
     void addMac();
     void setTemp(int8_t temp);
     void setTemperatureCallback(void* callback);
-    char* getFormattedValues();
+    String getFormattedValues();
     void init();
     static void timerCallback( SaveData* instance);
     int8_t _temp;
     std::vector<mac> averageMac;
-    mac* avCurrentMac;
+    uint16_t avCurrentMac;
 
 private:
     Ticker timer;

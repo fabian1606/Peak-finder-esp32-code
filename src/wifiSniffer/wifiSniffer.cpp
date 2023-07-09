@@ -19,6 +19,7 @@ WifiSniffer::WifiSniffer(uint8_t minChannel, uint8_t maxChannel)
         .handler = methodHandler,
         .user_ctx = NULL,
     };
+    addMac = false;
 }
 
 esp_err_t WifiSniffer::methodHandler(httpd_req_t *httpRequest)
@@ -30,6 +31,11 @@ esp_err_t WifiSniffer::methodHandler(httpd_req_t *httpRequest)
 WifiSniffer::~WifiSniffer()
 {
     // Destructor
+}
+
+void WifiSniffer::callCallback(){
+        Serial.println("Callback called");
+        macCallback();
 }
 
 void WifiSniffer::wifiSnifferPacketHandler(void *buff, wifi_promiscuous_pkt_type_t type)
@@ -48,11 +54,11 @@ void WifiSniffer::wifiSnifferPacketHandler(void *buff, wifi_promiscuous_pkt_type
     // delete all mac adresses that have not been seen in the last 10 minutes
     for (auto it = objectInstance.macAdresses.begin(); it != objectInstance.macAdresses.end();)
     {
-        if (millis() - it->timestamp > 600000)
+        if (millis() - it->timestamp > 2000) //TODO: change back to 600000
         {
             Serial.printf("Deleted mac adress: %s", it->macAdress);
             Serial.println();
-            // objectInstance.macCallback();
+            objectInstance.addMac= true; // call the callback function
             objectInstance.macAdresses.erase(it);
         }
         else
@@ -107,9 +113,8 @@ void WifiSniffer::scanPossibleMacAdress(uint32_t time, const char *possibleMac)
     }
 }
 
-void WifiSniffer:: setMacCallback(void* callback){
-    macCallback = callback;
-}
+
+
 // Handle
 void WifiSniffer::wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
@@ -205,8 +210,14 @@ IPAddress WifiSniffer::init(const char *ssid)
     return (ip_info.ip.addr);
 }
 
-void WifiSniffer::update()
+bool WifiSniffer::update()
 {
+    if(addMac)
+    {
+        addMac = false;
+        return true;
+    }
+    return false;
 }
 
 void WifiSniffer::setChannel(uint8_t &channel)
@@ -215,4 +226,9 @@ void WifiSniffer::setChannel(uint8_t &channel)
     channel += 1;
     if (channel > maxWifiChannel)
         channel = minWifiChannel;
+}
+void WifiSniffer::setMacCallback(macCallback_t callback)
+{
+    macCallback = callback;
+    Serial.println("Callback set");
 }

@@ -64,7 +64,9 @@ class WifiSniffer{
         static void startHttpServer(void);
         static void stopHttpServer(void);
 
-        void* macCallback;
+        typedef void* (*macCallback_t)(); // define the callback function for the mac adress
+
+        macCallback_t macCallback;
 
     public:
         static WifiSniffer& getInstance() { // singleton pattern to ensure that only one instance of the class exists (i cant use the wifi instance in multiple objects)
@@ -76,7 +78,9 @@ class WifiSniffer{
 
 
 
-        void setMacCallback(void* callback);// callback function when a new mac is found
+        void setMacCallback(macCallback_t callback);// callback function when a new mac is found
+
+        void callCallback(); // call the callback function
 
         typedef struct { // the format the mac adress is saved in
             uint16_t id;
@@ -91,6 +95,7 @@ class WifiSniffer{
         IPAddress init(const char* ssid);
 
         void setChannel(uint8_t & channel);
+        bool addMac;
 
-        void update();
+        bool update();
 };
