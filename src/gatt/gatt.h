@@ -44,8 +44,13 @@ void gattSendMessage(uint16_t index)
     String users = preferences.getString("users");
     String clientsPerHour = preferences.getString("clientsHour");
     preferences.end();
+    preferences.begin("config", false);
+    int MountainID = (preferences.getString("sUuid")).toInt();
+    String MountainName = preferences.getString("mountain");
+    preferences.end();
 
-    String message = users + String(static_cast<char>(0xFF)) + clientsPerHour;
+    String message = String(String(MountainID)[0])+ "{\"a\":\""+MountainName+"\",\"arr\":["+users + String(static_cast<char>(0xFF)) + clientsPerHour;
+    Serial.println(message);
     const char *charmessage = message.c_str();
     uint16_t messageLength = strlen(charmessage);
     // Serial.println("Sending: "+message+String(messageLength));
